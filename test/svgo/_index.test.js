@@ -35,6 +35,53 @@ describe('svgo', () => {
     const result = optimize('<svg />', { input: 'file', path: 'input.svg' });
     expect(result.data).toEqual('<svg/>');
   });
+  it('should resolve and not escape numeric character references', async () => {
+    const result = optimize('<svg><text class="&#1234; &#xabcd;">&#xabcd; &#1234;</text></svg>', { input: 'file', path: 'input.svg' });
+    expect(result.data).toEqual('<svg><text class="\u04d2 \uabcd">\uabcd \u04d2</text></svg>');
+  });
+
+  it('should escape and not double-escape numeric character references representing <', async () => {
+    const result = optimize('<svg><text font-family="&#60; and &#x3c;">&#x3c; and &#60;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result5', result);
+    expect(result.data).toEqual('<svg><text font-family="&lt; and &lt;">&lt; and &lt;</text></svg>');
+  });
+  it('should escape and not double-escape numeric character references representing &', async () => {
+    const result = optimize('<svg><text font-family="&#38; and &#x26;">&#x26; and &#38;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result6', result);
+    expect(result.data).toEqual('<svg><text font-family="&amp; and &amp;">&amp; and &amp;</text></svg>');
+  });
+
+  // '<svg><text><![CDATA ]&#x3e; and ]&#62; ]></text></svg>'
+  // '<svg><text class="&#34; and &#39;">&#34; and &#39;</text></svg>',
+  // '<svg><text class="&#x22; and &#x27;">&#x22; and &#x27;</text></svg>',
+  it('should escape and not double-escape numeric character references representing >', async () => {
+    const result = optimize('<svg><text>CDATA1: <![CDATA[ ]&#x3e; and ]&#62; ]]></text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result7', result);
+    expect(result.data).toEqual('<svg><text>CDATA1: <![CDATA[ ]&#x3e; and ]&#62; ]]></text></svg>');
+  });
+  it('should escape and not double-escape numeric character references representing \'', async () => {
+    const result = optimize('<svg><text class="&#34; and &#39;">&#34; and &#39;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result8', result);
+    expect(result.data).toEqual('<svg><text class="&quot; and \'">&quot; and &apos;</text></svg>');
+  });
+  it('should escape and not double-escape numeric character references representing "', async () => {
+    const result = optimize('<svg><text class="&#x22; and &#x27;">&#x22; and &#x27;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result9', result);
+    expect(result.data).toEqual('<svg><text class="&quot; and \'">&quot; and &apos;</text></svg>');
+  });
+
+  it('should escape and not double-escape numeric character references representing \'', async () => {
+    const result = optimize('<svg><text class=\'&#34; and &#39;\'>&#34; and &#39;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result8', result);
+    expect(result.data).toEqual('<svg><text class="&quot; and \'">&quot; and &apos;</text></svg>');
+  });
+  it('should escape and not double-escape numeric character references representing "', async () => {
+    const result = optimize('<svg><text class="&#x22; and &#x27;">&#x22; and &#x27;</text></svg>', { input: 'file', path: 'input.svg' });
+    console.log('result9', result);
+    expect(result.data).toEqual('<svg><text class="&quot; and \'">&quot; and &apos;</text></svg>');
+  });
+
+
   it('should preserve style specifity over attributes', async () => {
     const [original, expected] = await parseFixture('style-specifity.svg');
     const result = optimize(original, {
